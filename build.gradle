@@ -1,0 +1,136 @@
+apply from: 'other.gradle'
+
+task hello {
+    ext.property = "myValue"
+    doLast {
+        println 'Hello World!'
+    }
+}
+
+// 在 gradle 任务中采用 groovy
+task upper << {
+    String something = 'mY_nAMe'
+    println "Original:" + something
+    println "Upper case:" + something.toUpperCase()
+}
+
+task count << {
+    4.times {
+        print "'$it' "
+        print "$it "
+    }
+}
+
+// 在两个任务之间指明依赖关系
+task intro(dependsOn: hello) << {
+    println "I'm Gradle"
+    println hello.property
+}
+
+// 通过 API 进行任务之间的通信 - 增加依赖
+5.times { counter ->
+    task "task$counter" << {
+        println "I'm task number $counter"
+    }
+}
+task0.dependsOn task2, task3, task1
+
+// 通过 API 进行任务之间的通信 - 增加任务行为
+task planet << {
+    println 'Hello Earth'
+}
+planet.doFirst {
+    println 'Hello Venus'
+}
+planet.doLast {
+    println 'Hello Mars'
+}
+planet << {
+    println 'Hello Jupiter'
+}
+
+// 依赖任务的不同输出
+task distribution << {
+    println "We build the zip with version=$version"
+}
+task release(dependsOn: 'distribution') << {
+    println 'We release now'
+}
+gradle.taskGraph.whenReady {taskGraph ->
+    if (taskGraph.hasTask(release)) {
+        version = '1.0'
+    } else {
+        version = '1.0-SNAPSHOT'
+    }
+}
+
+// 多任务调用
+task compile << {
+    println 'compiling source'
+}
+task compileTest(dependsOn: compile) << {
+    println 'compiling unit tests'
+}
+task test(dependsOn: [compile, compileTest]) << {
+    println 'running unit tests'
+}
+task dist(dependsOn: [compile, test]) << {
+    println 'building the distribution'
+}
+
+// apply plugin: "java"
+// ext {
+//     springVersion = "3.1.0.RELEASE"
+//     emailNotification = "build@master.org"
+// }
+// sourceSets.all { ext.purpose = null }
+// sourceSets {
+//     main {
+//         purpose = "production"
+//     }
+//     test {
+//         purpose = "test"
+//     }
+//     plugin {
+//         purpose = "production"
+//     }
+// }
+// task printProperties << {
+//     println springVersion
+//     println emailNotification
+//     sourceSets.matching { it.purpose == "production" }.each { println it.name }
+// } 
+
+// 创建文件夹
+def classesDir = new File('build/classes')
+task resources << {
+    classesDir.mkdirs()
+}
+
+task makedir(dependsOn: 'resources') << {
+    if (classesDir.isDirectory()){
+        println 'The class directory exists. I can operate'
+    }
+}
+
+// 使用gradle.properties文件设置属性
+task printProps {
+    doLast {
+        println commandLineProjectProp
+        println gradlePropertiesProp
+        println systemProjectProp
+        println envProjectProp
+        println System.properties['system']
+    }
+}
+
+task configure {
+    doLast {
+        def pos = new java.text.FieldPosition(10)
+        apply from: 'other1.gradle', to:pos
+        println pos.beginIndex
+        println pos.endIndex
+    }
+}
+
+// 通过 --recompile-scripts 选项运行 Gradle，可以丢弃缓存脚本，强制gradle重新生成缓存

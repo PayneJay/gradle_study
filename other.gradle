@@ -1,0 +1,8 @@
+// 使用外部构建脚本配置项目
+println "configuring $project"
+
+task other {
+    doLast {
+        println 'hello from other script'
+    }
+}
